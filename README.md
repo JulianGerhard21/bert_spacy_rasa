@@ -170,7 +170,6 @@ A *thank you* goes to all of the **amazing open source workers** out there:
 
 * [Rasa](https://github.com/RasaHQ)
 * [SpaCy](https://github.com/explosion/spaCy)
-* [SpaCy PTT](https://github.com/explosion/spacy-pytorch-transformers)
 * [Deepset](https://deepset.ai/german-bert)
 * [HuggingFace](https://github.com/huggingface/pytorch-transformers)
 

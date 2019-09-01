@@ -8,3 +8,4 @@ test_bot/evaluation
 test_bot/models
 10kGNAD-master/corpus.sqlite3
 10kGNAD-master/million_post_corpus.tar.bz2
+__pycache__
