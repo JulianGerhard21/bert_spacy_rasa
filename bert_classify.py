@@ -33,14 +33,14 @@ nlp = spacy.load(model_dir)
 
 # Load test data
 logger.info('Loading test data...')
-with open('data/test.json', 'r') as handle:
+with open('data/test.json', 'r', encoding='utf-8') as handle:
     test_data = json.load(handle)
 
-with open('data/train.json', 'r') as handle:
+with open('data/train.json', 'r', encoding='utf-8') as handle:
     train_data = json.load(handle)
 
-train_texts, train_cats = zip(*train_data)
-test_texts, test_cats = zip(*test_data)
+train_cats, train_texts = zip(*train_data)
+test_cats, test_texts = zip(*test_data)
 
 
 # Get the features of training and test data
