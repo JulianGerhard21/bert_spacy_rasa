@@ -1,0 +1,20 @@
+intents:
+  - Etat
+  - Inland
+  - International
+  - Kultur
+  - Panorama
+  - Sport
+  - Web
+  - Wirtschaft
+  - Wissenschaft
+actions:
+  - utter_Etat
+  - utter_Inland
+  - utter_International
+  - utter_Kultur
+  - utter_Panorama
+  - utter_Sport
+  - utter_Web
+  - utter_Wirtschaft
+  - utter_Wissenschaft

@@ -1,0 +1,17 @@
+language: de
+pipeline:
+ - name: SpacyNLP
+   case_sensitive: 1
+   model: de_pytt_bertbasecased_lg_gnad
+ - name: SpacyTokenizer
+ - name: SpacyFeaturizer
+ - name: SklearnIntentClassifier
+policies:
+ - name: KerasPolicy
+   batch_size: 50
+   epochs: 200
+   max_training_samples: 300
+ - name: MemoizationPolicy
+   max_history: 5
+ - name: FormPolicy
+ - name: MappingPolicy

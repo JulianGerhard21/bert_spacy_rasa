@@ -1,0 +1,3 @@
+spacy
+rasa
+spacy-pytorch-transformers
