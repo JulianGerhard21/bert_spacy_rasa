@@ -1,9 +1,14 @@
 # Finetune BERT Embeddings with SpaCy and Rasa
 
+**For whom this repository might be of interest:**
+
 This repository describes the process of finetuning the *german pretrained BERT* model of [deepset.ai](https://deepset.ai/german-bert)
 on a domain specific dataset, converting it into a [SpaCy](https://spacy.io/) packaged model and loading it in [Rasa](https://rasa.com/) to evaluate its
-performance on domain specific **Conversational AI** tasks like *intent detection* and *NER*.
+performance on domain specific **Conversational AI** tasks like *intent detection* or *NER*.
+There are several ways of designing a proper architecture and to evaluate the performance of
+models - most of them are currently omitted for the sake of simplicity. If there are questions though, feel free to ask.
 
+This repository is meant for those who want to have a quick dive into the matter. 
 
 I am going to use the [10kGNAD](https://tblock.github.io/10kGNAD/) dataset for this task but it should be easiy to
 modify the files for your specific case.
@@ -14,12 +19,13 @@ modify the files for your specific case.
 * Add [RoBERTa](https://arxiv.org/abs/1907.11692) to the current approach
 * Compare against other transformers like [GPT-2](https://github.com/openai/gpt-2) or [XLNet](https://arxiv.org/abs/1906.08237)
 * Add [BERT distillation](http://www.nlp.town/blog/distilling-bert/)
+
 ___
 ## Installation
 
 ### Requirements
 
-The scripts are tested on the following libraries:
+The scripts are tested using the following libraries:
 
 * python = 3.6.8
 * spacy = 2.1.8
@@ -172,6 +178,6 @@ A *thank you* goes to all of the **amazing open source workers** out there:
 * [SpaCy](https://github.com/explosion/spaCy)
 * [Deepset](https://deepset.ai/german-bert)
 * [HuggingFace](https://github.com/huggingface/pytorch-transformers)
-
+* [MKaze](https://github.com/mkaze/)
 
 
