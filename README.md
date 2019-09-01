@@ -1,19 +1,18 @@
-# Finetune BERT Embeddings with SpaCy and Rasa
+# Finetune BERT Embeddings with spaCy and Rasa
 
 **For whom this repository might be of interest:**
 
 This repository describes the process of finetuning the *german pretrained BERT* model of [deepset.ai](https://deepset.ai/german-bert)
-on a domain specific dataset, converting it into a [SpaCy](https://spacy.io/) packaged model and loading it in [Rasa](https://rasa.com/) to evaluate its
-performance on domain specific **Conversational AI** tasks like *intent detection* or *NER*.
-There are several ways of designing a proper architecture and to evaluate the performance of
-models - most of them are currently omitted for the sake of simplicity. If there are questions though, feel free to ask.
+on a domain-specific dataset, converting it into a [spaCy](https://spacy.io/) packaged model and loading it in [Rasa](https://rasa.com/) to evaluate its
+performance on domain-specific **Conversational AI** tasks like *intent detection* and *NER*.
+If there are questions though, feel free to ask.
 
 This repository is meant for those who want to have a quick dive into the matter. 
 
-I am going to use the [10kGNAD](https://tblock.github.io/10kGNAD/) dataset for this task but it should be easiy to
-modify the files for your specific case.
+I am going to use the [10kGNAD](https://tblock.github.io/10kGNAD/) dataset for this task but it should be easy to
+modify the files for your specific use case.
 
-**Shortterm Roadmap**:
+**Short-term Roadmap**:
 
 * Sentencize training samples
 * Add [RoBERTa](https://arxiv.org/abs/1907.11692) to the current approach
@@ -32,8 +31,8 @@ The scripts are tested using the following libraries:
 * spacy-pytorch-transformers = 0.3.0
 * rasa = 1.2.5
 
-Please keep in mind that some of the dependencies are work in progress and there might be interincompatibilities. 
-However, at the time writing this, the libraries can simply be installed by using `pip`.
+Please keep in mind that some of the dependencies are work in progress and there might be inter-incompatibilities. 
+However, at the time of writing this, the libraries can simply be installed by using `pip`.
 ___
 ### Getting started
 
@@ -42,10 +41,10 @@ ___
 The *split* is done by the finetuning script. If you want to have a different setting,
 feel free to modify the script.
 
-As suggested, we do a simple but stratified train test split with 15% test and 85% train which results in 8732 training
+As suggested, we do a simple but stratified train-test split with 15% as the test subset and 85% as the training subset, which results in 8732 training
 samples and 1541 evaluation samples. As there are many possibilities left, this is only one
-possible approach. While converting the articles.csv into a pandas dataframe, there were some broken lines
-wich currently are omitted.
+possible approach. While converting the `articles.csv` into a pandas dataframe, there were some broken lines
+which currently are omitted.
 ___
 #### Loading the pretrained BERT
 
@@ -66,11 +65,11 @@ You can start the finetuning process by using:
 python bert_finetuner_splitset.py de_pytt_bertbasecased_lg -o finetuning\output
 ```
 
-Currently I am using a ```softmax_pooler_ouput``` configuration for the ``pytt_textcat``component.
+Currently, I am using a ```softmax_pooler_ouput``` configuration for the ``pytt_textcat``component.
 I'd suggest a ``softmax_last_hidden`` as the next approach. The other parameters
-were set based on several evaluations and might be modified for your specific case.
+were set based on several evaluations and might be modified for your specific use case.
 ___
-#### Package the finetuned BERT with SpaCy and install it
+#### Package the finetuned BERT with spaCy and install it
 
 You can easily package your newly trained model by using:
 
@@ -81,27 +80,22 @@ python setup.py sdist
 pip install dist/de_pytt_bertbasecased_lg-1.0.0.tar.gz
 ```
 
-I recommend **changing the models name** to avoid unnecessary inconveniences
-by editting the config file and modifying the ``name`` value of:
-
-```
-/finetuning/output/meta.json
-```
+I recommend **changing the model's name** to avoid unnecessary inconveniences
+by editting the config file and modifying the ``name`` value of `/finetuning/output/meta.json`.
 
 ___
-#### Load the SpaCy model as a part of your rasa pipeline (optional)
+#### Load the spaCy model as part of your Rasa pipeline (optional)
 
-At the time writing this, BERT outperforms most of the recent state-of-the-art approaches
+At the time of writing this, BERT outperforms most of the recent state-of-the-art approaches
 in NLP/NLU tasks, e.g. document classification. 
-Since those techniques are used in several **conversational AI* tasks like **intent detection**
-I thought it might be a good idea, to evaluate its performance with **Rasa** - imho one of the
+Since those techniques are used in several **conversational AI** tasks like **intent detection**, I thought it might be a good idea to evaluate its performance with **Rasa** - IMHO one of the
 best open source CAI engines currently available.
 
 If someone is interested in building a chatbot with Rasa, it might be a good idea to read the
-[Getting started](https://rasa.com/docs/getting-started/).
+[Getting started](https://rasa.com/docs/getting-started/) guide.
 
-Assuming, that someone is familiar with Rasa, here is one possible configuration proposal, which
-loads the newly added, finetuned BERT model as a part of the training pipeline:
+Assuming that someone is familiar with Rasa, here is one possible configuration proposal which
+loads the newly added finetuned BERT model as a part of the training pipeline:
 
 ```
 language: de
@@ -114,10 +108,10 @@ pipeline:
  - name: SklearnIntentClassifier
 ```
 
-As you can see, I just specified the model's name, using the SpaCy architecture with
+As you can see, I just specified the model's name, using the spaCy architecture with
 Rasa. This works, even if ``python -m spacy validate`` does **not** show your model.
 
-Assuming that you might want to test the performance with Rasa, you can use the ``test_bot`` folder
+Assuming that you might want to test the performance with Rasa, you can use the ``test_bot`` directory
 which contains the skeletton for a Rasa bot to do so. In advance, use:
 
 ```
@@ -148,24 +142,24 @@ ___
 
 To keep things simple, there are two scripts which will do the work for you.
 
-**bert_classify** evaluates the finetuned BERT itsself by training a logistic regression
-and a simple SVM.
+**bert_classify** evaluates the finetuned BERT by training a logistic regression
+and a simple SVM classifier.
 
 ```
 python -m bert_classify.py 
 ```
 
-**bert_rasa_classify** loads the trained Rasa model and uses the pretrained BERTs features to evaluate the
-model's performance on the test data. Keep in mind that Rasa *compresses* your model and you simply
-have to unzip/untar it and to modify the path to the nlu model.
+**bert_rasa_classify** loads the trained Rasa model and uses the pretrained BERT features to evaluate the
+model's performance on the test data. Keep in mind that Rasa *compresses* your model, so you simply
+have to unzip/untar it and also modify the path to the NLU model in the script.
 
 ```
 python -m bert_rasa_classify.py 
 ```
 
-Please be aware of the fact, that to evaluate the **generalization capabilities** of the model,
+Please be aware of the fact that to evaluate the **generalization capabilities** of the model,
 it would be better to split the original dataset into three parts such that there is a dataset
-completely unknown by the model.
+completely unknown by the model (i.e. train/validation/test split).
 ___
 #### Productive usage of a large BERT model
 
@@ -175,9 +169,10 @@ ___
 A *thank you* goes to all of the **amazing open source workers** out there:
 
 * [Rasa](https://github.com/RasaHQ)
-* [SpaCy](https://github.com/explosion/spaCy)
+* [spaCy](https://github.com/explosion/spaCy)
 * [Deepset](https://deepset.ai/german-bert)
 * [HuggingFace](https://github.com/huggingface/pytorch-transformers)
 * [MKaze](https://github.com/mkaze/)
+
 
 
