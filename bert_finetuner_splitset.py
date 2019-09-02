@@ -189,9 +189,9 @@ def load_data(train_dataframe, eval_dataframe, label_list):
 
     train_data = list(train_dataframe.itertuples(index=False, name=None))
     dev_data = list(eval_dataframe.itertuples(index=False, name=None))
-    train_texts, train_labels = _prepare_partition(train_data, preprocess=False, label_list=label_list)
-    dev_texts, dev_labels = _prepare_partition(dev_data, preprocess=False, label_list=label_list)
-    return (train_texts, train_labels), (dev_texts, dev_labels)
+    train_labels, train_texts = _prepare_partition(train_data, preprocess=False, label_list=label_list)
+    dev_labels, dev_texts = _prepare_partition(dev_data, preprocess=False, label_list=label_list)
+    return (train_labels, train_texts), (dev_labels, dev_texts)
 
 
 def _prepare_partition(text_label_tuples, *, preprocess=False, label_list):
@@ -202,7 +202,7 @@ def _prepare_partition(text_label_tuples, *, preprocess=False, label_list):
     :param label_list:
     :return:
     """
-    texts, labels = zip(*text_label_tuples)
+    labels, texts = zip(*text_label_tuples)
     if preprocess:
         texts = [preprocess_text(text) for text in texts]
     cats = [{str(i): 1.0 if i == y else 0.0 for i in label_list} for y in labels]
