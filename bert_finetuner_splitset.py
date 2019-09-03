@@ -109,7 +109,9 @@ def main(
     # It might be a good idea to split sentences of an article into separate training samples
     # For the moment, we are skipping that step to keep things simple.
     split_training_by_sentence = True
+
     if split_training_by_sentence:
+        logger.info(f"Sentencicing ...")
         train_texts, train_cats = make_sentence_examples(nlp, train_texts, train_cats)
         logger.info(f"Extracted {len(train_texts)} training sentences.")
 
@@ -145,7 +147,7 @@ def main(
                 pbar.close()
                 with nlp.use_params(optimizer.averages):
                     scores = evaluate_multiclass(nlp, eval_texts, eval_cats)
-                results.append((scores["textcat_f"], step, epoch))
+                results.append((scores["textcat_wrg"], step, epoch))
                 print(
                     "{0:.3f}\t{1:.3f}\t{2:.3f}\t{3:.3f}".format(
                         losses["pytt_textcat"],
