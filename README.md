@@ -14,6 +14,7 @@ modify the files for your specific use case.
 
 **Short-term Roadmap**:
 
+* Publish evaluation results on various scenarios
 * Add CUDA Installation Guide
 * Add [RoBERTa](https://arxiv.org/abs/1907.11692) to the current approach
 * Compare against other transformers like [GPT-2](https://github.com/openai/gpt-2) or [XLNet](https://arxiv.org/abs/1906.08237)
