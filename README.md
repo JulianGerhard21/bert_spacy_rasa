@@ -33,6 +33,9 @@ The scripts are tested using the following libraries:
 
 Please keep in mind that some of the dependencies are work in progress and there might be inter-incompatibilities. 
 However, at the time of writing this, the libraries can simply be installed by using `pip`.
+
+I strongly suggest do finetune and test BERT with GPU support since finetuning on even a good CPU
+can last several hours per epoch. 
 ___
 ### Getting started
 
@@ -165,6 +168,31 @@ ___
 
 TBD
 ___
+
+#### Troubleshooting
+
+
+##### CUDA Out of Memory
+
+As discussed in a [spacy-pytt-issue](https://github.com/explosion/spacy-pytorch-transformers/issues/48) you may run into
+memory problems. I have tested the finetuning script on a *GTX 1080 with 8GB VRAM* and even with a batch size of
+2 (which is absolutely *not* recommended), I got memory problems.
+
+One way to deal with it is to use the sentencizer which splits larger documents into sentences while keeping their original labels.
+Another way is to reduce the batch size by half, to 12. BERT models usually need bigger batches but for the sake of functionality, I tried it.
+
+Currently I am using a *T80 with 12 GB VRAM*, sentencizing and a lowered batch size and that setup worked fine.
+
+
+##### AttributeError: module 'thinc_gpu_ops' has no attribute 'mean_pool'
+
+As discussed [here](https://github.com/explosion/spacy-pytorch-transformers/issues/27) you might run into the mentioned
+error. I was able to resolve it by manually cloning thinc-gpu-ops, running ``pip install -r requirements.txt`` (that actually installed cython) and then running ``pip install`` .
+
+___
+
+
+
 
 A *thank you* goes to all of the **amazing open source workers** out there:
 

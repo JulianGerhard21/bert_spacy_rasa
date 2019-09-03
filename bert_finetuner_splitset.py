@@ -29,13 +29,15 @@ logger = logging.getLogger(__name__)
     batch_size=("Number of docs per batch", "option", "bs", int),
     learn_rate=("Learning rate", "option", "lr", float),
     n_iter=("Number of training epochs", "option", "n", int),
+    sentence_split=("If the script should split docs into their sentences", "option", "s", bool),
 )
 def main(
     model,
     output_dir=None,
     n_iter=4,
     batch_size=24,
-    learn_rate=2e-5
+    learn_rate=2e-5,
+    sentence_split=False
 ):
     """
 
@@ -108,9 +110,8 @@ def main(
 
     # It might be a good idea to split sentences of an article into separate training samples
     # For the moment, we are skipping that step to keep things simple.
-    split_training_by_sentence = True
 
-    if split_training_by_sentence:
+    if sentence_split:
         logger.info(f"Sentencicing ...")
         train_texts, train_cats = make_sentence_examples(nlp, train_texts, train_cats)
         logger.info(f"Extracted {len(train_texts)} training sentences.")
