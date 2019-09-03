@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from collections import Counter
+
 import plac
 import re
 import random
@@ -11,9 +13,11 @@ import logging.config
 import numpy as np
 import pandas as pd
 from pathlib import Path
+
+import wasabi
 from sklearn.model_selection import train_test_split
 from spacy.util import minibatch
-from spacy_pytorch_transformers.util import warmup_linear_rates
+from spacy_pytorch_transformers.util import warmup_linear_rates, cyclic_triangular_rate
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger(__name__)
@@ -104,7 +108,7 @@ def main(
 
     # It might be a good idea to split sentences of an article into separate training samples
     # For the moment, we are skipping that step to keep things simple.
-    split_training_by_sentence = False
+    split_training_by_sentence = True
     if split_training_by_sentence:
         train_texts, train_cats = make_sentence_examples(nlp, train_texts, train_cats)
         logger.info(f"Extracted {len(train_texts)} training sentences.")
@@ -115,35 +119,83 @@ def main(
     # Initialize the TextCategorizer, and create an optimizer.
     optimizer = nlp.resume_training()
     optimizer.alpha = 0.001
-    learn_rates = warmup_linear_rates(
-        learn_rate, 0, n_iter * len(train_data) // batch_size
+    optimizer.pytt_weight_decay = 0.005
+    optimizer.L2 = 0.0
+    learn_rates = cyclic_triangular_rate(
+        learn_rate / 3, learn_rate * 3, 2 * len(train_data) // batch_size
     )
 
-    logger.info("Training the model...")
-    logger.info("{:^5}\t{:^5}\t{:^5}\t{:^5}".format("LOSS", "P", "R", "F"))
-    for i in range(n_iter):
-        losses = {}
-        # Batch up the examples using spaCy's minibatch
+    pbar = tqdm.tqdm(total=100, leave=False)
+    results = []
+    epoch = 0
+    step = 0
+    eval_every = 100
+    patience = 3
+    while True:
+        # Train and evaluate
+        losses = Counter()
         random.shuffle(train_data)
         batches = minibatch(train_data, size=batch_size)
-        with tqdm.tqdm(total=total_words, leave=False) as pbar:
-            for batch in batches:
-                optimizer.pytt_lr = next(learn_rates)
-                texts, annotations = zip(*batch)
-                nlp.update(texts, annotations, sgd=optimizer, drop=0.1, losses=losses)
-                pbar.update(sum(len(text.split()) for text in texts))
+        for batch in batches:
+            optimizer.pytt_lr = next(learn_rates)
+            texts, annotations = zip(*batch)
+            nlp.update(texts, annotations, sgd=optimizer, drop=0.1, losses=losses)
+            pbar.update(1)
+            if step and (step % eval_every) == 0:
+                pbar.close()
+                with nlp.use_params(optimizer.averages):
+                    scores = evaluate_multiclass(nlp, eval_texts, eval_cats)
+                results.append((scores["textcat_f"], step, epoch))
+                print(
+                    "{0:.3f}\t{1:.3f}\t{2:.3f}\t{3:.3f}".format(
+                        losses["pytt_textcat"],
+                        scores["textcat_acc"],
+                        scores["textcat_cor"],
+                        scores["textcat_wrg"],
+                    )
+                )
+                pbar = tqdm.tqdm(total=eval_every, leave=False)
+            step += 1
+        epoch += 1
+        # Stop if no improvement in HP.patience checkpoints
+        if results:
+            best_score, best_step, best_epoch = max(results)
+            if ((step - best_step) // eval_every) >= patience:
+                break
 
-        # Evaluate on the dev data split off in load_data()
-        with nlp.use_params(optimizer.averages):
-            scores = evaluate_multiclass(nlp, eval_texts, eval_cats)
-        logger.info(
-            "{0:.3f}\t{1:.3f}\t{2:.3f}\t{3:.3f}".format(
-                losses["pytt_textcat"],
-                scores["textcat_acc"],
-                scores["textcat_cor"],
-                scores["textcat_wrg"],
-            )
-        )
+    msg = wasabi.Printer()
+    table_widths = [2, 4, 6]
+    msg.info(f"Best scoring checkpoints")
+    msg.row(["Epoch", "Step", "Score"], widths=table_widths)
+    msg.row(["-" * width for width in table_widths])
+    for score, step, epoch in sorted(results, reverse=True)[:10]:
+        msg.row([epoch, step, "%.2f" % (score * 100)], widths=table_widths)
+
+    # logger.info("Training the model...")
+    # logger.info("{:^5}\t{:^5}\t{:^5}\t{:^5}".format("LOSS", "P", "R", "F"))
+    # for i in range(n_iter):
+    #     losses = {}
+    #     # Batch up the examples using spaCy's minibatch
+    #     random.shuffle(train_data)
+    #     batches = minibatch(train_data, size=batch_size)
+    #     with tqdm.tqdm(total=total_words, leave=False) as pbar:
+    #         for batch in batches:
+    #             optimizer.pytt_lr = next(learn_rates)
+    #             texts, annotations = zip(*batch)
+    #             nlp.update(texts, annotations, sgd=optimizer, drop=0.1, losses=losses)
+    #             pbar.update(sum(len(text.split()) for text in texts))
+    #
+    #     # Evaluate on the dev data split off in load_data()
+    #     with nlp.use_params(optimizer.averages):
+    #         scores = evaluate_multiclass(nlp, eval_texts, eval_cats)
+    #     logger.info(
+    #         "{0:.3f}\t{1:.3f}\t{2:.3f}\t{3:.3f}".format(
+    #             losses["pytt_textcat"],
+    #             scores["textcat_acc"],
+    #             scores["textcat_cor"],
+    #             scores["textcat_wrg"],
+    #         )
+    #     )
 
     if output_dir is not None:
         nlp.to_disk(output_dir)
@@ -152,14 +204,20 @@ def main(
 
 def make_sentence_examples(nlp, texts, labels):
     """
-    Treat each sentence of the document as an instance, using the doc labels."
+
     :param nlp:
     :param texts:
     :param labels:
     :return:
     """
-    sents = texts
-    sent_cats = labels
+    sents = []
+    sent_cats = []
+    for text, cats in zip(texts, labels):
+        doc = nlp.make_doc(text)
+        doc = nlp.get_pipe("sentencizer")(doc)
+        for sent in doc.sents:
+            sents.append(sent.text)
+            sent_cats.append(cats)
     return sents, sent_cats
 
 def preprocess_text(text):
