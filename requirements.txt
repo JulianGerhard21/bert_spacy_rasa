@@ -1,3 +1,4 @@
 spacy
 rasa
 spacy-pytorch-transformers
+pandas

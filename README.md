@@ -14,7 +14,7 @@ modify the files for your specific use case.
 
 **Short-term Roadmap**:
 
-* Sentencize training samples
+* Add CUDA Installation Guide
 * Add [RoBERTa](https://arxiv.org/abs/1907.11692) to the current approach
 * Compare against other transformers like [GPT-2](https://github.com/openai/gpt-2) or [XLNet](https://arxiv.org/abs/1906.08237)
 * Add [BERT distillation](http://www.nlp.town/blog/distilling-bert/)
@@ -23,6 +23,12 @@ ___
 ## Installation
 
 ### Requirements
+
+Basically all you need to to is execute:
+
+```
+pip install -r requirements.txt
+```
 
 The scripts are tested using the following libraries:
 
