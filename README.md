@@ -19,6 +19,7 @@ modify the files for your specific use case.
 * Add [RoBERTa](https://arxiv.org/abs/1907.11692) to the current approach
 * Compare against other transformers like [GPT-2](https://github.com/openai/gpt-2) or [XLNet](https://arxiv.org/abs/1906.08237)
 * Add [BERT distillation](http://www.nlp.town/blog/distilling-bert/)
+* Add NER support
 
 ___
 ## Installation
@@ -36,7 +37,7 @@ The scripts are tested using the following libraries:
 * python = 3.6.8
 * spacy = 2.1.8
 * spacy-pytorch-transformers = 0.3.0
-* rasa = 1.2.5
+* rasa = 1.2.7
 
 Please keep in mind that some of the dependencies are work in progress and there might be inter-incompatibilities. 
 However, at the time of writing this, the libraries can simply be installed by using `pip`.
@@ -175,6 +176,46 @@ ___
 
 TBD
 ___
+
+#### A note on NER (Named Entity Recognition)
+
+As soon as I realized that I won’t be able to use the finetuned BERT-spaCy model in rasa for e.g. extracting entities like PERSON (in fact, duckling is currently not able to do that), I thought about how this would be done in general:
+
+1. Use the SpacyFeaturizer and SpacyEntityExtractor which currently would be recommended but which is not possible due to manual effort on the side of BERT (as mentioned, I am working on that).
+2. Finetuning the pretrained BERT that afterwards is converted into a spaCy-compatible model on any NER dataset is absolutely possible and intended. We can finetune the BERT on both tasks alongside. If so, the model contains everything we are going to need to derive entities from it. Currently just not with spaCy directly. Instead we could use a CustomBERTEntityExtractor which loads the model that the pipeline already has loaded and do the work, that spaCy is currently not “able” to do.
+
+3. Since 2 seems to be an overhead at least for the moment, why not do the following:
+```
+language: de
+pipeline: 
+ - name: SpacyNLP
+   case_sensitive: 1
+   model: de_pytt_bertbasecased_lg_gnad
+ - name: SpacyTokenizer
+ - name: SpacyFeaturizer
+ - name: SklearnIntentClassifier
+ - name: SpacyNLP
+   case_sensitive: 1
+   model: de_core_news_md
+ - name: RegexFeaturizer
+ - name: CRFEntityExtractor
+ - name: DucklingHTTPExtractor
+   dimensions: ['time', 'duration', 'email']
+   locale: de_DE
+   timezone: Europe/Berlin
+   url: http://localhost:8001
+ - name: SpacyEntityExtractor
+   dimensions: ['PER', 'LOC', 'CARDINAL']
+ - name: rasa_mod_regex.RegexEntityExtractor
+ - name: EntitySynonymMapper
+
+```
+This pipeline will then load and use the features of de_pytt_bertbasecased_lg_gnad for SklearnIntentClassifier, and the features of de_core_news_md for SpacyEntityExtractor.
+
+This is not a neat solution and it should only be used until there is a smarter way (1,2) but it works.
+
+It should be mentioned, that of course you are able to even train your own with spaCy.
+
 
 #### Troubleshooting
 
