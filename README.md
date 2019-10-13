@@ -67,21 +67,21 @@ ___
 The script assumes the pretrained BERT to be installed with:
 
 ```
-python -m spacy download de_pytt_bertbasecased_lg
+python -m spacy download de_trf_bertbasecased_lg
 ```
 
 For the sake of interest, I have added the ``bert_config.json`` from Deepset's awesome work
-if someone wonders how the ``de_pytt_bertbasecased_lg`` was trained.
+if someone wonders how the ``de_trf_bertbasecased_lg`` was trained.
 ___
 #### Finetune the pretrained BERT
 
 You can start the finetuning process by using:
 
 ```
-python bert_finetuner_splitset.py de_pytt_bertbasecased_lg -o finetuning\output
+python bert_finetuner_splitset.py de_trf_bertbasecased_lg -o finetuning\output
 ```
 
-Currently, I am using a ```softmax_pooler_ouput``` configuration for the ``pytt_textcat``component.
+Currently, I am using a ```softmax_pooler_ouput``` configuration for the ``trf_textcat``component.
 I'd suggest a ``softmax_last_hidden`` as the next approach. The other parameters
 were set based on several evaluations and might be modified for your specific use case.
 ___
@@ -91,9 +91,9 @@ You can easily package your newly trained model by using:
 
 ```
 python -m spacy package finetuning/output /packaged_model
-cd /packaged_model/de_pytt_bertbasecased_lg-1.0.0
+cd /packaged_model/de_trf_bertbasecased_lg-1.0.0
 python setup.py sdist
-pip install dist/de_pytt_bertbasecased_lg-1.0.0.tar.gz
+pip install dist/de_trf_bertbasecased_lg-1.0.0.tar.gz
 ```
 
 I recommend **changing the model's name** to avoid unnecessary inconveniences
@@ -118,7 +118,7 @@ language: de
 pipeline: 
  - name: SpacyNLP
    case_sensitive: 1
-   model: de_pytt_bertbasecased_lg_gnad
+   model: de_trf_bertbasecased_lg_gnad
  - name: SpacyTokenizer
  - name: SpacyFeaturizer
  - name: SklearnIntentClassifier
@@ -195,7 +195,7 @@ language: de
 pipeline: 
  - name: SpacyNLP
    case_sensitive: 1
-   model: de_pytt_bertbasecased_lg_gnad
+   model: de_trf_bertbasecased_lg_gnad
  - name: SpacyTokenizer
  - name: SpacyFeaturizer
  - name: SklearnIntentClassifier
@@ -215,7 +215,7 @@ pipeline:
  - name: EntitySynonymMapper
 
 ```
-This pipeline will then load and use the features of de_pytt_bertbasecased_lg_gnad for SklearnIntentClassifier, and the features of de_core_news_md for SpacyEntityExtractor.
+This pipeline will then load and use the features of de_trf_bertbasecased_lg_gnad for SklearnIntentClassifier, and the features of de_core_news_md for SpacyEntityExtractor.
 
 This is not a neat solution and it should only be used until there is a smarter way (1,2) but it works.
 
@@ -227,7 +227,7 @@ It should be mentioned, that of course you are able to even train your own with 
 
 ##### CUDA Out of Memory
 
-As discussed in a [spacy-pytt-issue](https://github.com/explosion/spacy-pytorch-transformers/issues/48) you may run into
+As discussed in a [spacy-trf-issue](https://github.com/explosion/spacy-pytorch-transformers/issues/48) you may run into
 memory problems. I have tested the finetuning script on a *GTX 1080 with 8GB VRAM* and even with a batch size of
 2 (which is absolutely *not* recommended), I got memory problems.
 
