@@ -1,4 +1,4 @@
 spacy
 rasa
-spacy-pytorch-transformers
+spacy-transformers
 pandas

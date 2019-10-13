@@ -17,7 +17,7 @@ from pathlib import Path
 import wasabi
 from sklearn.model_selection import train_test_split
 from spacy.util import minibatch
-from spacy_pytorch_transformers.util import warmup_linear_rates, cyclic_triangular_rate
+from spacy_transformers.util import cyclic_triangular_rate
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger(__name__)
@@ -49,10 +49,16 @@ def main(
     :return:
     """
 
-    random.seed(42)
+    max_wpb = 1000
+
+    spacy.util.fix_random_seed(0)
     is_using_gpu = spacy.prefer_gpu()
     if is_using_gpu:
         torch.set_default_tensor_type("torch.cuda.FloatTensor")
+    if output_dir is not None:
+        output_dir = Path(output_dir)
+        if not output_dir.exists():
+            output_dir.mkdir()
 
     # Creating the output directory if it's not already present
     if output_dir is not None:
@@ -67,7 +73,7 @@ def main(
 
     # Using a softmax pooler output as first approach.
     textcat = nlp.create_pipe(
-        "pytt_textcat", config={"architecture": "softmax_pooler_output"}
+        "trf_textcat", config={"architecture": "softmax_pooler_output", "words_per_batch": max_wpb}
     )
 
     # Loading the 10kGNAD dataset with pandas, representing its labels as a list
@@ -75,10 +81,18 @@ def main(
     df_train_set = pd.read_csv('data/articles.csv', delimiter=';', error_bad_lines=False, names=['label', 'article'])
     train_label_list = df_train_set['label'].unique().tolist()
 
+    logger.info(
+        f"Using {len(df_train_set)} training docs overall.")
+
     # Do a stratified train test split and persist the result for later usage
-    train_dataframe, eval_dataframe = train_test_split(df_train_set, test_size=0.15, stratify=df_train_set['label'])
+    train_dataframe, eval_dataframe_first = train_test_split(df_train_set, test_size=0.4, stratify=df_train_set['label'])
+    eval_dataframe, dev_dataframe = train_test_split(eval_dataframe_first, test_size=0.5, stratify=eval_dataframe_first['label'])
+
     train_data = list(train_dataframe.itertuples(index=False, name=None))
     test_data = list(eval_dataframe.itertuples(index=False, name=None))
+    dev_data = list(dev_dataframe.itertuples(index=False, name=None))
+
+    logger.info(f"Using {len(train_data)} training docs, {len(test_data)} evaluation) and {len(dev_data)} for development.")
 
     # Some of the evaluation scripts are loading JSON so we are going to provide the split as JSON aswell
     with open('data/train.json', 'w') as handle:
@@ -87,9 +101,13 @@ def main(
     with open('data/test.json', 'w') as handle:
         json.dump(test_data, handle)
 
+    with open('data/dev.json', 'w') as handle:
+        json.dump(dev_data, handle)
+
     # Since rasa usually reads from markdown files, we are going ti provide the split as MD aswell
     create_rasa_training_set(train_dataframe)
     create_rasa_test_set(eval_dataframe)
+    create_rasa_dev_set(dev_dataframe)
 
     # For later usage, we persist the labels separate from the rest aswell
     with open('data/labels.json', 'w', encoding='utf-8') as file:
@@ -106,7 +124,6 @@ def main(
 
     # Configuring the pipeline for the finetuning process
     nlp.add_pipe(textcat, last=True)
-    logger.info(f"Using {len(train_texts)} training docs, {len(eval_texts)} evaluation).")
 
     # It might be a good idea to split sentences of an article into separate training samples
     # For the moment, we are skipping that step to keep things simple.
@@ -122,7 +139,7 @@ def main(
     # Initialize the TextCategorizer, and create an optimizer.
     optimizer = nlp.resume_training()
     optimizer.alpha = 0.001
-    optimizer.pytt_weight_decay = 0.005
+    optimizer.trf_weight_decay = 0.005
     optimizer.L2 = 0.0
     learn_rates = cyclic_triangular_rate(
         learn_rate / 3, learn_rate * 3, 2 * len(train_data) // batch_size
@@ -140,7 +157,7 @@ def main(
         random.shuffle(train_data)
         batches = minibatch(train_data, size=batch_size)
         for batch in batches:
-            optimizer.pytt_lr = next(learn_rates)
+            optimizer.trf_lr = next(learn_rates)
             texts, annotations = zip(*batch)
             nlp.update(texts, annotations, sgd=optimizer, drop=0.1, losses=losses)
             pbar.update(1)
@@ -151,7 +168,7 @@ def main(
                 results.append((scores["textcat_wrg"], step, epoch))
                 print(
                     "{0:.3f}\t{1:.3f}\t{2:.3f}\t{3:.3f}".format(
-                        losses["pytt_textcat"],
+                        losses["trf_textcat"],
                         scores["textcat_acc"],
                         scores["textcat_cor"],
                         scores["textcat_wrg"],
@@ -173,32 +190,6 @@ def main(
     msg.row(["-" * width for width in table_widths])
     for score, step, epoch in sorted(results, reverse=True)[:10]:
         msg.row([epoch, step, "%.2f" % (score * 100)], widths=table_widths)
-
-    # logger.info("Training the model...")
-    # logger.info("{:^5}\t{:^5}\t{:^5}\t{:^5}".format("LOSS", "P", "R", "F"))
-    # for i in range(n_iter):
-    #     losses = {}
-    #     # Batch up the examples using spaCy's minibatch
-    #     random.shuffle(train_data)
-    #     batches = minibatch(train_data, size=batch_size)
-    #     with tqdm.tqdm(total=total_words, leave=False) as pbar:
-    #         for batch in batches:
-    #             optimizer.pytt_lr = next(learn_rates)
-    #             texts, annotations = zip(*batch)
-    #             nlp.update(texts, annotations, sgd=optimizer, drop=0.1, losses=losses)
-    #             pbar.update(sum(len(text.split()) for text in texts))
-    #
-    #     # Evaluate on the dev data split off in load_data()
-    #     with nlp.use_params(optimizer.averages):
-    #         scores = evaluate_multiclass(nlp, eval_texts, eval_cats)
-    #     logger.info(
-    #         "{0:.3f}\t{1:.3f}\t{2:.3f}\t{3:.3f}".format(
-    #             losses["pytt_textcat"],
-    #             scores["textcat_acc"],
-    #             scores["textcat_cor"],
-    #             scores["textcat_wrg"],
-    #         )
-    #     )
 
     if output_dir is not None:
         nlp.to_disk(output_dir)
@@ -313,6 +304,26 @@ def create_rasa_training_set(df_train_set):
     label_samples = {}
     with open('data/train.md', 'w', encoding='utf-8') as file:
         for index, entry in df_train_set.iterrows():
+            if entry['label'] not in label_samples:
+                label_samples[entry['label']] = []
+                label_samples[entry['label']].append(entry['article'])
+            else:
+                label_samples[entry['label']].append(entry['article'])
+        for label, articles in label_samples.items():
+            file.write('## intent:' + label + '\n')
+            for article in articles:
+                file.write('- ' + article + '\n')
+
+
+def create_rasa_dev_set(df_dev_set):
+    """
+
+    :param df_dev_set:
+    :return:
+    """
+    label_samples = {}
+    with open('data/dev.md', 'w', encoding='utf-8') as file:
+        for index, entry in df_dev_set.iterrows():
             if entry['label'] not in label_samples:
                 label_samples[entry['label']] = []
                 label_samples[entry['label']].append(entry['article'])
