@@ -1,6 +1,6 @@
 # Finetune BERT Embeddings with spaCy and Rasa
 
-** Update 13.10.2019 ** 
+** Update 28.11.2019 ** 
 
 Repository was updated to be compatible with the latest changes to spacy-pytorch-transformers which were renamed to spacy-transformers. I recommend to uninstall the old library before installing the new one. The training script
 was adapted accordingly.
@@ -41,8 +41,8 @@ The scripts are tested using the following libraries:
 
 * python = 3.6.8
 * spacy = 2.2.1
-* spacy-transformers = 0.5.0
-* rasa = 1.3.9
+* spacy-transformers = 0.5.1
+* rasa = 1.5.0
 
 Please keep in mind that some of the dependencies are work in progress and there might be inter-incompatibilities. 
 However, at the time of writing this, the libraries can simply be installed by using `pip`.
