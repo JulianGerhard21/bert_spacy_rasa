@@ -1,5 +1,36 @@
 # Finetune BERT Embeddings with spaCy and Rasa
 
+** Update 28.12.2019 **
+
+I finally got the time to add a [DistilBERT](https://github.com/huggingface/transformers/tree/master/examples/distillation) version
+that can be used for finetuning and as a Spacy model used in Rasa.
+
+I order to use this one you need to follow these steps:
+
+1. Modify the files changed in [this PR](https://github.com/explosion/spacy-transformers/pull/120) in your local spacy-transformers installation
+2. Modify the files changed in [this PR](https://github.com/explosion/spacy-transformers/pull/121) in your local spacy-transformers installation
+3. Download [this DistilBERT model](https://huggingface.co/distilbert-base-german-cased) from HuggingFace into your repository
+4. In the downloaded directory make sure to have the following files present: `config.json`, `pytorch_model.bin`, `vocab.txt`
+5. Use the command `python examples/init_model.py --lang de --name distilbert-base-german-cased /path/to/model` from the `spacy-transformers` repo
+6. You should see a new folder *distilbert-base-german-cased* with the spacy-initiated model files. Use:
+
+```
+python -m spacy package distilbert-base-german-cased/ /packaged_model
+cd /packaged_model/de_distilbert_base_german_cased-0.0.1
+python setup.py sdist
+pip install dist/de_distilbert_base_german_cased-0.0.1.tar.gz
+```
+
+* (Optional) If you want to **finetune** de_distilbert_base_german_cased, change the `trf_textcat` architecture to `softmax_last_hidden`
+* (Optional) If you want to **create an Excel-file** for finetuning out of an existing **`nlu.md` from Rasa**, you can use `create_xlsx_dataset_from_rasa_nlu.py` to create one.
+
+It is worth to mention, that every model that is supported by the `transformers` library can be converted and used
+this way. If you want to do that, simply use the `init_model.py` of `spacy-transformers` this way:
+
+```
+python examples/init_model.py --lang xx --name TRANSFOMERS_MODEL_NAME /path/to/model
+```
+
 ** Update 28.11.2019 ** 
 
 Repository was updated to be compatible with the latest changes to spacy-pytorch-transformers which were renamed to spacy-transformers. I recommend to uninstall the old library before installing the new one. The training script
@@ -19,11 +50,8 @@ modify the files for your specific use case.
 
 **Short-term Roadmap**:
 
-* Publish evaluation results on various scenarios
 * Add CUDA Installation Guide
 * Add [RoBERTa](https://arxiv.org/abs/1907.11692) to the current approach
-* Compare against other transformers like [GPT-2](https://github.com/openai/gpt-2) or [XLNet](https://arxiv.org/abs/1906.08237)
-* Add [BERT distillation](http://www.nlp.town/blog/distilling-bert/)
 * Add NER support
 
 ___
@@ -43,6 +71,7 @@ The scripts are tested using the following libraries:
 * spacy = 2.2.1
 * spacy-transformers = 0.5.1
 * rasa = 1.5.0
+* transformers 2.3.0
 
 Please keep in mind that some of the dependencies are work in progress and there might be inter-incompatibilities. 
 However, at the time of writing this, the libraries can simply be installed by using `pip`.
