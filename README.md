@@ -1,6 +1,28 @@
 # Finetune BERT Embeddings with spaCy and Rasa
 
-** Update 28.12.2019 **
+**For whom this repository might be of interest:**
+
+This repository describes the process of finetuning the *german pretrained BERT* model of [deepset.ai](https://deepset.ai/german-bert)
+on a domain-specific dataset, converting it into a [spaCy](https://spacy.io/) packaged model and loading it in [Rasa](https://rasa.com/) to evaluate its
+performance on domain-specific **Conversational AI** tasks like *intent detection* and *NER*.
+If there are questions though, feel free to ask.
+
+This repository is meant for those who want to have a quick dive into the matter. 
+
+I am going to use the [10kGNAD](https://tblock.github.io/10kGNAD/) dataset for this task but it should be easy to
+modify the files for your specific use case.
+
+**Short-term Roadmap**:
+
+- [x] Add [DistilBERT](https://github.com/huggingface/transformers/tree/master/examples/distillation) support
+- [ ] Add CUDA Installation Guide
+- [x] Add [RoBERTa](https://arxiv.org/abs/1907.11692) support
+- [x] Add NER support
+
+___
+## Updates
+
+**Update 28.12.2019: DistilBERT**
 
 I finally got the time to add a [DistilBERT](https://github.com/huggingface/transformers/tree/master/examples/distillation) version
 that can be used for finetuning and as a Spacy model used in Rasa.
@@ -30,31 +52,23 @@ this way. If you want to do that, simply use the `init_model.py` of `spacy-trans
 ```
 python examples/init_model.py --lang xx --name TRANSFOMERS_MODEL_NAME /path/to/model
 ```
-
-** Update 28.11.2019 ** 
-
-Repository was updated to be compatible with the latest changes to spacy-pytorch-transformers which were renamed to spacy-transformers. I recommend to uninstall the old library before installing the new one. The training script
-was adapted accordingly.
-
-**For whom this repository might be of interest:**
-
-This repository describes the process of finetuning the *german pretrained BERT* model of [deepset.ai](https://deepset.ai/german-bert)
-on a domain-specific dataset, converting it into a [spaCy](https://spacy.io/) packaged model and loading it in [Rasa](https://rasa.com/) to evaluate its
-performance on domain-specific **Conversational AI** tasks like *intent detection* and *NER*.
-If there are questions though, feel free to ask.
-
-This repository is meant for those who want to have a quick dive into the matter. 
-
-I am going to use the [10kGNAD](https://tblock.github.io/10kGNAD/) dataset for this task but it should be easy to
-modify the files for your specific use case.
-
-**Short-term Roadmap**:
-
-* Add CUDA Installation Guide
-* Add [RoBERTa](https://arxiv.org/abs/1907.11692) to the current approach
-* Add NER support
-
 ___
+
+**Update 28.12.2019: NER finetuning**
+
+I finally got the time to evaluate the NER support for training an already finetuned BERT/DistilBERT model on
+a *Named Entity Recognition* task. 
+
+In order to use this one, follow these steps:
+
+1. Modify the files in [this PR](https://github.com/explosion/spacy-transformers/pull/95) in your current spacy-transformers installation
+2. Modify the files changed in [this PR](https://github.com/explosion/spacy-transformers/pull/120) in your local spacy-transformers installation
+3. Modify the files changed in [this PR](https://github.com/explosion/spacy-transformers/pull/121) in your local spacy-transformers installation
+4. Use the added `bert_finetuner_ner.py` script from the spacy-transformers library on any pretrained BERT-architectured model
+
+After the finetuning process finished, you can treat the resulting model as later explained in this guide by *packaging* it
+for the usage in Rasa.
+
 ## Installation
 
 ### Requirements
@@ -68,9 +82,9 @@ pip install -r requirements.txt
 The scripts are tested using the following libraries:
 
 * python = 3.6.8
-* spacy = 2.2.1
+* spacy = 2.2.3
 * spacy-transformers = 0.5.1
-* rasa = 1.5.0
+* rasa = 1.6.0
 * transformers 2.3.0
 
 Please keep in mind that some of the dependencies are work in progress and there might be inter-incompatibilities. 
