@@ -22,6 +22,17 @@ modify the files for your specific use case.
 ___
 ## Updates
 
+**Update 24.03.2020: Changes to Rasa and Spacy**
+
+I verified that everything is still working with:
+
+* python = 3.6.8
+* spacy = 2.2.4
+* spacy-transformers = 0.5.1
+* rasa = 1.8.2
+
+Besides, Rasa added the [HFTransformersNLP](https://rasa.com/docs/rasa/nlu/components/#hftransformersnlp) pipeline element to its core which enables the user to use every [pretrained model](https://huggingface.co/transformers/pretrained_models.html) accordingly. However, this currently doesn't replace the finetuning aspect which still significantly boosts the models performance. I am currently working on a finetuning CustomComponent for Rasa.
+
 **Update 28.12.2019: DistilBERT**
 
 I finally got the time to add a [DistilBERT](https://github.com/huggingface/transformers/tree/master/examples/distillation) version
