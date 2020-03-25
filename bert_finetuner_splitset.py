@@ -165,7 +165,7 @@ def main(
                 pbar.close()
                 with nlp.use_params(optimizer.averages):
                     scores = evaluate_multiclass(nlp, eval_texts, eval_cats)
-                results.append((scores["textcat_wrg"], step, epoch))
+                results.append((scores["textcat_acc"], step, epoch))
                 print(
                     "{0:.3f}\t{1:.3f}\t{2:.3f}\t{3:.3f}".format(
                         losses["trf_textcat"],
