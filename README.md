@@ -22,6 +22,55 @@ modify the files for your specific use case.
 ___
 ## Updates
 
+**Update 06.07.2020: Alternative ways of usage**
+
+Hi everyone,
+
+long time no see! 
+
+Though the content of this repository should still do the job even with the newest Rasa version, a lot happened the past months.
+
+* [Spacy updated to version 2.3](https://spacy.io/usage/v2-3#_title)
+* HuggingFace released version 3 of their [transformers](https://github.com/huggingface/transformers) library
+* Rasa released version [1.10.5](https://rasa.com/docs/rasa/changelog/#id1) of their library
+
+Since there is a lot of change going on regarding Spacy version 3, the currently used spacy-transformers library most likely
+won't get any more updates. I therefore strongly recommend to use the transformers library to achieve the same finetuning 
+results as with Spacy. In order to do so, simply use the script "huggingface_finetune.py" alongside a [HFTransformersNLP](https://rasa.com/docs/rasa/nlu/components/#hftransformersnlp) component the following way:
+
+```
+pipeline:
+ - name: HFTransformersNLP
+   model_name: "bert"
+   model_weights: "PATH_TO_YOUR_FINETUNED_MODEL_DIRECTORY"
+   cache_dir: "PATH_TO_SOME_CACHE_FOLDER"
+ - name: LanguageModelFeaturizer
+ - name: DIETClassifier
+   random_seed: 42
+   intent_classification: True
+   entity_recognition: False
+   use_masked_language_model: True
+   epochs: 80
+   number_of_transformer_layers: 4
+   transformer_size: 256
+   drop_rate: 0.2
+   weight_sparsity: 0.7
+   batch_size: [64, 256]
+   embedding_dimension: 50
+   hidden_layer_sizes:
+     text: [512, 128]
+```
+
+Please change the settings according to your situation, especially the Hyperparameters for DIET. The given ones prove to perform
+good on the german language.
+
+Tested with:
+
+* python = 3.6.8
+* transformers = 3.0.0
+* rasa = 1.10.5
+
+
 **Update 24.03.2020: Changes to Rasa and Spacy**
 
 I verified that everything is still working with:
